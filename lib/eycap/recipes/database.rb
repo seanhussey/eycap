@@ -37,11 +37,15 @@ Capistrano::Configuration.instance(:must_exist).load do
       on_rollback { run "rm -f #{backup_file}" }
       run("cat #{shared_path}/config/database.yml") { |channel, stream, data| @environment_info = YAML.load(data)[rails_env] }
       
+      dbuser = @environment_info['username']
+      dbpass = @environment_info['password']
+      dbhost = 'localhost'
+      
       if @environment_info['adapter'] == 'mysql'
-        dbhost = @environment_info['host']
-        if rails_env == "production"
-          dbhost = environment_dbhost.sub('-master', '') + '-replica' if dbhost != 'localhost' # added for Solo offering, which uses localhost   
-        end
+        # dbhost = @environment_info['host']
+        # if rails_env == "production"
+        #   dbhost = environment_dbhost.sub('-master', '') + '-replica' if dbhost != 'localhost' # added for Solo offering, which uses localhost   
+        # end
         run "mysqldump --add-drop-table -u #{dbuser} -h #{dbhost} -p #{environment_database} | gzip -c > #{backup_file}.gz" do |ch, stream, out |
            ch.send_data "#{dbpass}\n" if out=~ /^Enter password:/
         end
